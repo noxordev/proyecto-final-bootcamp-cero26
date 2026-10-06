@@ -1,0 +1,12 @@
+# Reglas de Cursor: son solo para uso local
+.cursor/
+
+# Variables secretas, como la API key de OMDb
+.env
+
+# Entorno virtual: cada persona lo crea con requirements.txt
+venv/
+.venv/
+
+# Archivos que Python genera solo al ejecutar
+__pycache__/
