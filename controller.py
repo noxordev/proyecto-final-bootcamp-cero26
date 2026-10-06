@@ -7,3 +7,7 @@ app = FastAPI()
 def say_hello():
     """Ruta de prueba: confirma que el servidor responde. No recibe nada y devuelve un saludo."""
     return {"message": "hola"}
+
+router = APIRouter(prefix="/api")
+@router.get("/search")
+@router.get("/movies/{movie_id}")
