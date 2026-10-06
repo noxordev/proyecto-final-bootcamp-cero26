@@ -8,5 +8,6 @@
 venv/
 .venv/
 
-# Archivos que Python genera solo al ejecutar
+# Archivos que Python y pytest generan solos al ejecutar
 __pycache__/
+.pytest_cache/
