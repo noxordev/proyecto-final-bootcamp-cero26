@@ -7,12 +7,11 @@ OMDB_URL = "https://www.omdbapi.com/"
 NOT_FOUND_ERROR = "Movie not found!"
 
 load_dotenv() # Carga las variables de entorno desde el archivo .env. 
-OMDB_API_KEY = os.getenv("OMDB_API_KEY") # Obtiene la API key de OMDb.
+OMDB_API_KEY = os.getenv("OMDB_API_KEY") # Obtiene la API key de OMDb del .env.
 
 
 if not OMDB_API_KEY: # Mejor que el servidor no arranque a que falle más tarde.
     raise RuntimeError("Falta OMDB_API_KEY en el archivo .env")
-
 
 class OmdbError(Exception):
     """Error al consultar OMDb: no responde, o responde con un error distinto de "no encontrada"."""
