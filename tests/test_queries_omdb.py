@@ -17,10 +17,10 @@ def test_search_by_title():
 def test_search_by_title_and_year():
     """Con año, todas las películas son de ese año, y The Matrix está entre ellas."""
     movies = search_movies("matrix", "1999")
+    ids = []
     for movie in movies:
         assert movie["Year"] == "1999"
-    # Crea una lista solo con el imdbID de cada película.
-    ids = [movie["imdbID"] for movie in movies]
+        ids.append(movie["imdbID"])
     assert THE_MATRIX_ID in ids
 
 

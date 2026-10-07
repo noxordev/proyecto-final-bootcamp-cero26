@@ -12,7 +12,9 @@ def test_search():
     """Una búsqueda válida responde 200 con la lista de películas."""
     response = client.get("/api/search", params={"title": "matrix", "year": "1999"})
     assert response.status_code == 200
-    titles = [movie["Title"] for movie in response.json()]
+    titles = []
+    for movie in response.json():
+        titles.append(movie["Title"])
     assert "The Matrix" in titles
 
 
@@ -43,10 +45,11 @@ def test_year_that_is_not_a_number():
     assert response.json()["detail"] == "El año tiene que ser un número."
 
 
-def test_omdb_failure(monkeypatch):
+def test_omdb_failure(monkeypatch): # monkeypatch es una herramienta que permite modificar el 
+    # comportamiento de una función o clase para realizar pruebas.
     """Si OMDb no responde, la ruta responde 502 con el mensaje de OmdbError."""
     # El dominio .invalid está reservado: nunca existe, así que la conexión siempre falla.
-    monkeypatch.setattr(queries_omdb, "OMDB_URL", "https://omdb.invalid/")
+    monkeypatch.setattr(queries_omdb, "OMDB_URL", "https://omdb.invalid/") #Pruebo a conectar con un dominio que no existe.
     response = client.get("/api/search", params={"title": "matrix"})
     assert response.status_code == 502
     assert response.json()["detail"] == "No se pudo conectar con OMDb."
