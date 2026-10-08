@@ -1,5 +1,6 @@
-# Reglas de Cursor: son solo para uso local
+# Reglas de Cursor y backlog personal: son solo para uso local
 .cursor/
+BACKLOG.md
 
 # Variables secretas, como la API key de OMDb
 .env
