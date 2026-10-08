@@ -32,8 +32,8 @@ async function searchMovies(event) {
     });
 
     try {
-        const response = await fetch(`/api/search?${params}`);
-        const data = await response.json();
+        const response = await fetch(`/api/search?${params}`); // Hace la petición a la API.
+        const data = await response.json(); // Convierte la respuesta a JSON.
         // Si la API responde con error, el motivo viene dentro del JSON, en "detail".
         if (!response.ok) {
             showMessage(`No se pudo completar la búsqueda: ${data.detail}`);
