@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 
-from queries_omdb import OmdbError, search_movies
+from queries_omdb import OmdbError, get_movie, search_movies
 
 # Todas las rutas de este archivo empiezan por /api, sin tener que repetirlo en cada una.
 router = APIRouter(prefix="/api")
@@ -24,3 +24,20 @@ def search(title: str, year: str = ""):
     except OmdbError as error:
         # 502: el fallo no es del usuario ni nuestro, sino del servicio externo (OMDb).
         raise HTTPException(status_code=502, detail=str(error))
+
+
+@router.get("/movies/{movie_id}")
+def movie_detail(movie_id: str):
+    """Devuelve el detalle de una película por su imdbID: /api/movies/tt0133093
+
+    Recibe el imdbID desde la propia dirección.
+    Devuelve todos los datos de la película que da OMDb, que FastAPI envía como JSON.
+    Responde con error 404 si no existe y 502 si falla OMDb.
+    """
+    try:
+        movie = get_movie(movie_id)
+    except OmdbError as error:
+        raise HTTPException(status_code=502, detail=str(error))
+    if movie is None:
+        raise HTTPException(status_code=404, detail="No existe ninguna película con ese id.")
+    return movie

@@ -1,9 +1,9 @@
-"""Tests de search_movies. Llaman de verdad a OMDb: necesitan internet y la API key del .env."""
+"""Tests de search_movies y get_movie. Llaman de verdad a OMDb: necesitan internet y la API key del .env."""
 
 import pytest
 
 import queries_omdb
-from queries_omdb import OmdbError, search_movies
+from queries_omdb import OmdbError, get_movie, search_movies
 
 THE_MATRIX_ID = "tt0133093"
 
@@ -48,3 +48,20 @@ def test_unreachable_omdb(monkeypatch):
     monkeypatch.setattr(queries_omdb, "OMDB_URL", "https://omdb.invalid/")
     with pytest.raises(OmdbError, match="No se pudo conectar"):
         search_movies("matrix", "")
+
+
+def test_get_movie():
+    """Con un imdbID que existe, devuelve un diccionario con los datos de esa película."""
+    movie = get_movie(THE_MATRIX_ID)
+    assert movie["Title"] == "The Matrix"
+    assert movie["Year"] == "1999"
+
+
+def test_get_movie_unknown_id():
+    """Con un imdbID que tiene buen formato pero no existe, devuelve None."""
+    assert get_movie("tt9999999") is None
+
+
+def test_get_movie_malformed_id():
+    """Con un id mal formado, también devuelve None: para el usuario es lo mismo, no existe."""
+    assert get_movie("abc") is None

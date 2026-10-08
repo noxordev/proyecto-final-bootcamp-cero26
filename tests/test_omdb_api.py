@@ -6,7 +6,7 @@ cambiado y hay que revisar queries_omdb.py.
 
 import httpx
 
-from queries_omdb import NOT_FOUND_ERROR, OMDB_API_KEY, OMDB_URL
+from queries_omdb import DETAIL_NOT_FOUND_ERRORS, NOT_FOUND_ERROR, OMDB_API_KEY, OMDB_URL
 
 
 def ask_omdb(params):
@@ -42,3 +42,11 @@ def test_search_by_year_alone():
     data = ask_omdb({"y": "1999"})
     assert data["Response"] == "False"
     assert data["Error"] == "Incorrect IMDb ID."
+
+
+def test_detail_not_found():
+    """Por id, OMDb dice "no existe" con dos mensajes distintos: por eso DETAIL_NOT_FOUND_ERRORS tiene dos."""
+    well_formed = ask_omdb({"i": "tt9999999"})
+    malformed = ask_omdb({"i": "abc"})
+    assert well_formed["Error"] == DETAIL_NOT_FOUND_ERRORS[0]
+    assert malformed["Error"] == DETAIL_NOT_FOUND_ERRORS[1]

@@ -53,3 +53,25 @@ def test_omdb_failure(monkeypatch): # monkeypatch es una herramienta que permite
     response = client.get("/api/search", params={"title": "matrix"})
     assert response.status_code == 502
     assert response.json()["detail"] == "No se pudo conectar con OMDb."
+
+
+def test_movie_detail():
+    """Un imdbID que existe responde 200 con los datos de la película."""
+    response = client.get("/api/movies/tt0133093")
+    assert response.status_code == 200
+    assert response.json()["Title"] == "The Matrix"
+
+
+def test_movie_detail_unknown_id():
+    """Un imdbID que no existe responde 404 con nuestro mensaje."""
+    response = client.get("/api/movies/tt9999999")
+    assert response.status_code == 404
+    assert response.json()["detail"] == "No existe ninguna película con ese id."
+
+
+def test_movie_detail_omdb_failure(monkeypatch):
+    """Si OMDb no responde, el detalle también responde 502 con el mensaje de OmdbError."""
+    monkeypatch.setattr(queries_omdb, "OMDB_URL", "https://omdb.invalid/")
+    response = client.get("/api/movies/tt0133093")
+    assert response.status_code == 502
+    assert response.json()["detail"] == "No se pudo conectar con OMDb."
