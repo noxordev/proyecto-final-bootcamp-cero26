@@ -8,6 +8,9 @@
 venv/
 .venv/
 
+# Base de datos con los comentarios de prueba: cada persona la crea con create_db.sql
+movies.db
+
 # Archivos que Python y pytest generan solos al ejecutar
 __pycache__/
 .pytest_cache/
