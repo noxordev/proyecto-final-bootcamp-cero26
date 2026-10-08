@@ -60,5 +60,6 @@ def test_get_comments_order(tmp_path, monkeypatch):
 def test_comment_with_quotes(tmp_path, monkeypatch):
     """Un comentario con comillas se guarda tal cual, sin romper la consulta."""
     use_empty_database(tmp_path, monkeypatch)
-    save_comment("tt0133093", "Ana", "It's 'genial'; DROP TABLE Comment")
-    assert get_comments("tt0133093")[0]["comment"] == "¡Recomendada por el profe Ricardo!; DROP TABLE Comment"
+    text = "¡'Recomendada' por el profe Ricardo!; DROP TABLE Comment"
+    save_comment("tt0133093", "Ana", text)
+    assert get_comments("tt0133093")[0]["comment"] == text

@@ -1,9 +1,17 @@
-"""Tests de las rutas de controller.py. Las búsquedas válidas llaman de verdad a OMDb."""
+"""Tests de las rutas de controller.py. Las búsquedas válidas llaman de verdad a OMDb.
+
+Los de comentarios usan una base de datos temporal, nunca movies.db.
+"""
+
+import os
 
 from fastapi.testclient import TestClient # TestClient es una clase que permite hacer pruebas a la API.
 
+import connection
 import queries_omdb
 from main import app
+from queries_db import save_comment
+from test_queries_db import use_empty_database
 
 client = TestClient(app)
 
@@ -75,3 +83,66 @@ def test_movie_detail_omdb_failure(monkeypatch):
     response = client.get("/api/movies/tt0133093")
     assert response.status_code == 502
     assert response.json()["detail"] == "No se pudo conectar con OMDb."
+
+
+def test_list_comments(tmp_path, monkeypatch):
+    """Los comentarios guardados de una película se devuelven con 200."""
+    use_empty_database(tmp_path, monkeypatch)
+    save_comment("tt0133093", "Ricardo", "Ricardo aprueba esta película")
+    response = client.get("/api/movies/tt0133093/comments")
+    assert response.status_code == 200
+    assert response.json()[0]["person"] == "Ricardo"
+
+
+def test_add_comment(tmp_path, monkeypatch):
+    """Un comentario válido responde 201 y después aparece en la lista, sin espacios sobrantes."""
+    use_empty_database(tmp_path, monkeypatch)
+    new_comment = {"person": "  Ana  ", "comment": "  Ricardo, esta ruta también tiene tests  "}
+    response = client.post("/api/movies/tt0133093/comments", json=new_comment)
+    assert response.status_code == 201
+    comments = client.get("/api/movies/tt0133093/comments").json()
+    assert comments[0]["person"] == "Ana"
+    assert comments[0]["comment"] == "Ricardo, esta ruta también tiene tests"
+
+
+def test_add_comment_blank_person(tmp_path, monkeypatch):
+    """Un nombre hecho solo de espacios responde 400 y no se guarda nada."""
+    use_empty_database(tmp_path, monkeypatch)
+    new_comment = {"person": "   ", "comment": "Sin nombre"}
+    response = client.post("/api/movies/tt0133093/comments", json=new_comment)
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Escribe tu nombre."
+    assert client.get("/api/movies/tt0133093/comments").json() == []
+
+
+def test_add_comment_blank_comment(tmp_path, monkeypatch):
+    """Un comentario hecho solo de espacios responde 400 con nuestro mensaje."""
+    use_empty_database(tmp_path, monkeypatch)
+    new_comment = {"person": "Ana", "comment": "   "}
+    response = client.post("/api/movies/tt0133093/comments", json=new_comment)
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Escribe un comentario."
+
+
+def test_add_comment_missing_field():
+    """Sin el campo comment, FastAPI responde 422 por sí solo, porque NewComment lo exige."""
+    response = client.post("/api/movies/tt0133093/comments", json={"person": "Ana"})
+    assert response.status_code == 422
+
+
+def test_comments_database_error(tmp_path, monkeypatch):
+    """Si la base de datos falla, las dos rutas responden 500 con su mensaje."""
+    # Un archivo que existe pero no es una base de datos: sqlite3 lanza un error al usarlo.
+    broken_path = os.path.join(tmp_path, "broken.db")
+    with open(broken_path, "w", encoding="utf-8") as file:
+        file.write("Esto no es una base de datos, Ricardo")
+    monkeypatch.setattr(connection, "DB_PATH", broken_path)
+
+    response = client.get("/api/movies/tt0133093/comments")
+    assert response.status_code == 500
+    assert response.json()["detail"] == "No se pudieron cargar los comentarios."
+
+    new_comment = {"person": "Ana", "comment": "Hola"}
+    response = client.post("/api/movies/tt0133093/comments", json=new_comment)
+    assert response.status_code == 500
+    assert response.json()["detail"] == "No se pudo guardar el comentario."
