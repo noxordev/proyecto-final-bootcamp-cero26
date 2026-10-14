@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 
 OMDB_URL = "https://www.omdbapi.com/"
 NOT_FOUND_ERROR = "Movie not found!"
+TOO_MANY_RESULTS_ERROR = "Too many results."
 # Con estos mensajes OMDb dice que no hay película con ese imdbID: el primero si el id
 # tiene buen formato pero no existe, el segundo si el formato es incorrecto.
 DETAIL_NOT_FOUND_ERRORS = ["Error getting data.", "Incorrect IMDb ID."]
@@ -18,6 +19,10 @@ if not OMDB_API_KEY: # Mejor que el servidor no arranque a que falle más tarde.
 
 class OmdbError(Exception):
     """Error al consultar OMDb: no responde, o responde con un error distinto de "no encontrada"."""
+
+
+class TooManyResultsError(Exception):
+    """OMDb encontró demasiadas películas: el título buscado es demasiado corto o genérico."""
 
 
 def fetch_omdb(params):
@@ -55,13 +60,16 @@ def search_movies(title, year):
 
     Recibe el título y el año; si el año es "" o None, OMDb no filtra por año.
     Devuelve la lista de películas encontradas, vacía si no hay ninguna.
-    Lanza OmdbError si OMDb no responde o devuelve otro error.
+    Lanza TooManyResultsError si el título da demasiados resultados,
+    y OmdbError si OMDb no responde o devuelve otro error.
     """
     data = fetch_omdb({"s": title, "y": year, "type": "movie"})
     if data["Response"] == "True": # OMDb envía "True" y "False" como texto, no como booleanos. 
         return data["Search"]
     if data["Error"] == NOT_FOUND_ERROR:
         return []
+    if data["Error"] == TOO_MANY_RESULTS_ERROR:
+        raise TooManyResultsError()
     raise OmdbError(data["Error"])
 
 

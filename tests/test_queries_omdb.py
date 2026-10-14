@@ -3,7 +3,7 @@
 import pytest
 
 import queries_omdb
-from queries_omdb import OmdbError, get_movie, search_movies
+from queries_omdb import OmdbError, TooManyResultsError, get_movie, search_movies
 
 THE_MATRIX_ID = "tt0133093"
 
@@ -30,8 +30,8 @@ def test_unknown_title():
 
 
 def test_too_short_title():
-    """Un título demasiado corto hace que OMDb devuelva un error, que llega como OmdbError."""
-    with pytest.raises(OmdbError, match="Too many results"):
+    """Un título demasiado corto da demasiados resultados: llega como TooManyResultsError, no como OmdbError."""
+    with pytest.raises(TooManyResultsError):
         search_movies("a", "")
 
 

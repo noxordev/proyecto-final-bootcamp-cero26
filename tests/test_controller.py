@@ -53,6 +53,13 @@ def test_year_that_is_not_a_number():
     assert response.json()["detail"] == "El año tiene que ser un número."
 
 
+def test_search_too_short_title():
+    """Un título que da demasiados resultados responde 400 con nuestro mensaje en español."""
+    response = client.get("/api/search", params={"title": "a"})
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Hay demasiados resultados: escribe un título más largo."
+
+
 def test_omdb_failure(monkeypatch): # monkeypatch es una herramienta que permite modificar el 
     # comportamiento de una función o clase para realizar pruebas.
     """Si OMDb no responde, la ruta responde 502 con el mensaje de OmdbError."""

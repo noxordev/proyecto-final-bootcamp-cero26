@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from queries_db import get_comments, save_comment
-from queries_omdb import OmdbError, get_movie, search_movies
+from queries_omdb import OmdbError, TooManyResultsError, get_movie, search_movies
 
 # Todas las rutas de este archivo empiezan por /api, sin tener que repetirlo en cada una.
 router = APIRouter(prefix="/api")
@@ -16,7 +16,8 @@ def search(title: str, year: str = ""):
 
     Recibe el título (obligatorio) y el año (puede faltar) desde la dirección.
     Devuelve la lista de películas de OMDb, que FastAPI envía como JSON.
-    Responde con error 400 si los datos no son válidos y 502 si falla OMDb.
+    Responde con error 400 si los datos no son válidos o el título da demasiados resultados,
+    y 502 si falla OMDb.
     """
     if not title.strip(): #strip() elimina los espacios en blanco al principio y al final de la cadena.
         raise HTTPException(status_code=400, detail="Escribe un título para buscar.")
@@ -25,6 +26,9 @@ def search(title: str, year: str = ""):
         raise HTTPException(status_code=400, detail="El año tiene que ser un número.")
     try:
         return search_movies(title, year)
+    except TooManyResultsError:
+        # 400: no falla OMDb, es que el título es demasiado corto; lo puede arreglar el usuario.
+        raise HTTPException(status_code=400, detail="Hay demasiados resultados: escribe un título más largo.")
     except OmdbError as error:
         # 502: el fallo no es del usuario ni nuestro, sino del servicio externo (OMDb).
         raise HTTPException(status_code=502, detail=str(error))

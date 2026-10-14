@@ -6,7 +6,7 @@ cambiado y hay que revisar queries_omdb.py.
 
 import httpx
 
-from queries_omdb import DETAIL_NOT_FOUND_ERRORS, NOT_FOUND_ERROR, OMDB_API_KEY, OMDB_URL
+from queries_omdb import DETAIL_NOT_FOUND_ERRORS, NOT_FOUND_ERROR, OMDB_API_KEY, OMDB_URL, TOO_MANY_RESULTS_ERROR
 
 
 def ask_omdb(params):
@@ -50,3 +50,9 @@ def test_detail_not_found():
     malformed = ask_omdb({"i": "abc"})
     assert well_formed["Error"] == DETAIL_NOT_FOUND_ERRORS[0]
     assert malformed["Error"] == DETAIL_NOT_FOUND_ERRORS[1]
+
+
+def test_too_many_results():
+    """Con un título muy corto, OMDb no devuelve una lista larga sino un error con este texto exacto."""
+    data = ask_omdb({"s": "a"})
+    assert data == {"Response": "False", "Error": TOO_MANY_RESULTS_ERROR}
