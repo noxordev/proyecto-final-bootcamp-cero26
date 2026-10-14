@@ -118,5 +118,11 @@ async function sendComment(event) {
 
 document.getElementById("comment-form").addEventListener("submit", sendComment);
 
-loadMovie();
-loadComments();
+// Sin ?id= (o con ?id= vacío) no hay película que pedir: se avisa y no se hace ninguna petición.
+// !movieId es verdadero tanto con null (no hay id) como con "" (id vacío).
+if (!movieId) {
+    document.getElementById("message").textContent = "No se indicó ninguna película. Vuelve al buscador y elige una.";
+} else {
+    loadMovie();
+    loadComments();
+}
