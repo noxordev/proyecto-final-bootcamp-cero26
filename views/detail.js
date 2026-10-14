@@ -1,3 +1,6 @@
+// El id viene en la dirección (detail.html?id=tt0133093). Lo usan la película y sus comentarios.
+const movieId = new URLSearchParams(window.location.search).get("id");
+
 // Recibe los datos de una película (tal como los da la API) y los pinta en la página.
 function showMovie(movie) {
     document.title = movie.Title;
@@ -18,11 +21,9 @@ function showMovie(movie) {
     document.getElementById("movie").hidden = false; // Muestra el contenedor de la película.
 }
 
-// Lee el id de la dirección (detail.html?id=tt0133093), pide la película a la API y la muestra.
-// Si algo falla, muestra el error en el hueco de mensajes.
+// Pide la película a la API y la muestra. Si algo falla, muestra el error en el hueco de mensajes.
 async function loadMovie() {
     const message = document.getElementById("message");
-    const movieId = new URLSearchParams(window.location.search).get("id");
     try {
         const response = await fetch(`/api/movies/${movieId}`);
         const data = await response.json();
@@ -37,4 +38,50 @@ async function loadMovie() {
     }
 }
 
+// Recibe la lista de comentarios de la API y pinta cada uno: quién, cuándo y qué dijo.
+// Si la lista está vacía, lo avisa con un mensaje.
+function showComments(comments) {
+    const list = document.getElementById("comments");
+    list.innerHTML = "";
+    if (comments.length === 0) {
+        document.getElementById("comments-message").textContent = "Todavía no hay comentarios.";
+        return;
+    }
+    comments.forEach(comment => {
+        const item = document.createElement("li");
+        item.className = "list-group-item";
+
+        const author = document.createElement("strong");
+        author.textContent = `${comment.person} · ${comment.date}`;
+
+        // textContent: lo que escribió otra persona se muestra como texto, nunca se ejecuta como HTML.
+        const text = document.createElement("p");
+        text.className = "mb-0";
+        text.textContent = comment.comment;
+
+        item.appendChild(author);
+        item.appendChild(text);
+        list.appendChild(item);
+    });
+}
+
+// Pide a la API los comentarios de la película y los muestra. Si algo falla, muestra el error.
+async function loadComments() {
+    const message = document.getElementById("comments-message");
+    message.textContent = "";
+    try {
+        const response = await fetch(`/api/movies/${movieId}/comments`);
+        const data = await response.json();
+        if (!response.ok) {
+            message.textContent = data.detail;
+            return;
+        }
+        showComments(data);
+    } catch (error) {
+        // Solo llega aquí si el servidor no responde o responde algo que no es JSON.
+        message.textContent = "No se pudieron cargar los comentarios. Inténtalo de nuevo.";
+    }
+}
+
 loadMovie();
+loadComments();

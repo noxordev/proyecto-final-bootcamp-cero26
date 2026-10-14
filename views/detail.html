@@ -24,6 +24,13 @@
                 <p><strong>Género:</strong> <span id="genre"></span></p>
                 <p><strong>Duración:</strong> <span id="runtime"></span></p>
             </div>
+
+            <!-- Dentro de #movie para que, si la película no existe, tampoco se vean sus comentarios. -->
+            <section class="col-12">
+                <h2 class="h4">Comentarios</h2>
+                <p id="comments-message" class="text-secondary"></p>
+                <ul id="comments" class="list-group"></ul>
+            </section>
         </div>
     </main>
 
