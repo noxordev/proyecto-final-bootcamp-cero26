@@ -12,9 +12,9 @@
         <p id="message" class="text-danger"></p> <!-- Mensaje de error que se muestra si la película no existe. -->
 
         <!-- Oculto hasta que detail.js tenga los datos, para no mostrar etiquetas vacías. -->
-        <div id="movie" class="row g-4" hidden>
+        <div id="movie" class="row g-4" hidden> 
             <div class="col-md-4">
-                <img id="poster" class="img-fluid rounded" hidden> <!-- oculto hasta que detail.js tenga los datos, para no mostrar etiquetas vacías. -->
+                <img id="poster" class="img-fluid rounded" hidden>
             </div>
             <div class="col-md-8">
                 <h1 id="title" class="mb-3"></h1>
@@ -28,6 +28,13 @@
             <!-- Dentro de #movie para que, si la película no existe, tampoco se vean sus comentarios. -->
             <section class="col-12">
                 <h2 class="h4">Comentarios</h2>
+                <!-- detail.js lee estos campos por su id al enviar el formulario. -->
+                <form id="comment-form" class="mb-3">
+                    <input id="person" class="form-control mb-2" placeholder="Tu nombre" required>
+                    <textarea id="comment" class="form-control mb-2" rows="3" placeholder="Tu comentario" required></textarea>
+                    <button class="btn btn-primary">Enviar comentario</button>
+                </form>
+                <p id="comment-error" class="text-danger"></p>
                 <p id="comments-message" class="text-secondary"></p>
                 <ul id="comments" class="list-group"></ul>
             </section>

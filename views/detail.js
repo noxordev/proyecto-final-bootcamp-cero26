@@ -1,5 +1,8 @@
-// El id viene en la dirección (detail.html?id=tt0133093). Lo usan la película y sus comentarios.
-const movieId = new URLSearchParams(window.location.search).get("id");
+// la película, sus comentarios y el formulario (principio DRY). Se hace en tres pasos:
+const queryString = window.location.search; // 1. La parte de la dirección que va desde el "?":
+const params = new URLSearchParams(queryString); // 2. Convierte ese texto en un objeto al que se le puede 
+// preguntar por cada parámetro.
+const movieId = params.get("id"); // 3. Pregunta por el parámetro "id"
 
 // Recibe los datos de una película (tal como los da la API) y los pinta en la página.
 function showMovie(movie) {
@@ -42,22 +45,21 @@ async function loadMovie() {
 // Si la lista está vacía, lo avisa con un mensaje.
 function showComments(comments) {
     const list = document.getElementById("comments");
-    list.innerHTML = "";
+    list.innerHTML = ""; // propiedad para limpiar el contenido de un elemento
     if (comments.length === 0) {
         document.getElementById("comments-message").textContent = "Todavía no hay comentarios.";
         return;
     }
     comments.forEach(comment => {
-        const item = document.createElement("li");
-        item.className = "list-group-item";
+        const item = document.createElement("li"); // crea un nuevo elemento li en el DOM
+        item.className = "list-group-item"; // agrega la clase list-group-item al elemento li
 
-        const author = document.createElement("strong");
-        author.textContent = `${comment.person} · ${comment.date}`;
-
-        // textContent: lo que escribió otra persona se muestra como texto, nunca se ejecuta como HTML.
+        const author = document.createElement("strong"); // crea un nuevo elemento strong en el DOM
+        author.textContent = `${comment.person} · ${comment.date}`; // agrega el texto al elemento strong.
+        // textContent: lo que escribió otra persona se muestra como texto, y nunca se ejecuta como HTML.
         const text = document.createElement("p");
-        text.className = "mb-0";
-        text.textContent = comment.comment;
+        text.className = "mb-0"; // agrega la clase mb-0 al elemento p
+        text.textContent = comment.comment; // agrega el texto al elemento p
 
         item.appendChild(author);
         item.appendChild(text);
@@ -82,6 +84,39 @@ async function loadComments() {
         message.textContent = "No se pudieron cargar los comentarios. Inténtalo de nuevo.";
     }
 }
+
+// Se ejecuta al enviar el formulario de comentarios: manda el comentario a la API y, si se guarda,
+// vacía el formulario y vuelve a pedir la lista. Si algo falla, muestra el error bajo el formulario.
+async function sendComment(event) {
+
+    event.preventDefault();    // Sin esto, el navegador recargaría la página al enviar el formulario.
+    const formError = document.getElementById("comment-error");
+    formError.textContent = "";
+
+    const newComment = {
+        person: document.getElementById("person").value,
+        comment: document.getElementById("comment").value,
+    };
+    try {
+        const response = await fetch(`/api/movies/${movieId}/comments`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" }, 
+            body: JSON.stringify(newComment), // convierte el objeto en una cadena de texto en formato JSON.
+        });
+        const data = await response.json(); // convierte la respuesta en un objeto JavaScript.
+        if (!response.ok) {
+            formError.textContent = data.detail; // muestra el mensaje de error en el formulario.
+            return;
+        }
+        document.getElementById("comment-form").reset(); // vacía el formulario.
+        loadComments(); // vuelve a pedir la lista de comentarios.
+    } catch (error) {
+        // Solo llega aquí si el servidor no responde o responde algo que no es JSON.
+        formError.textContent = "No se pudo enviar el comentario. Inténtalo de nuevo.";
+    }
+}
+
+document.getElementById("comment-form").addEventListener("submit", sendComment);
 
 loadMovie();
 loadComments();
