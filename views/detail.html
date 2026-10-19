@@ -29,9 +29,11 @@
             <section class="col-12">
                 <h2 class="h4">Comentarios</h2>
                 <!-- detail.js lee estos campos por su id al enviar el formulario. -->
+                <!-- maxlength copia MAX_PERSON_LENGTH y MAX_COMMENT_LENGTH de controller.py: es una comodidad;
+                     el límite que cuenta es el del servidor. Si cambian allí, hay que cambiarlos aquí. -->
                 <form id="comment-form" class="mb-3">
-                    <input id="person" class="form-control mb-2" placeholder="Tu nombre" required>
-                    <textarea id="comment" class="form-control mb-2" rows="3" placeholder="Tu comentario" required></textarea>
+                    <input id="person" class="form-control mb-2" placeholder="Tu nombre" maxlength="50" required>
+                    <textarea id="comment" class="form-control mb-2" rows="3" placeholder="Tu comentario" maxlength="500" required></textarea>
                     <button class="btn btn-primary">Enviar comentario</button>
                 </form>
                 <p id="comment-error" class="text-danger"></p>

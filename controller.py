@@ -9,6 +9,10 @@ from queries_omdb import OmdbError, TooManyResultsError, get_movie, search_movie
 # Todas las rutas de este archivo empiezan por /api, sin tener que repetirlo en cada una.
 router = APIRouter(prefix="/api")
 
+# Longitud máxima de lo que llega del formulario de comentarios. 
+MAX_PERSON_LENGTH = 50
+MAX_COMMENT_LENGTH = 500
+
 
 @router.get("/search")
 def search(title: str, year: str = ""):
@@ -79,7 +83,8 @@ def add_comment(movie_id: str, new_comment: NewComment):
 
     Recibe el imdbID desde la dirección y, en el cuerpo de la petición, el nombre y el comentario.
     Devuelve un mensaje de confirmación, con el código 201 ("creado").
-    Responde con error 400 si falta el nombre o el comentario y 500 si falla la base de datos.
+    Responde con error 400 si falta el nombre o el comentario o si son demasiado largos,
+    y 500 si falla la base de datos.
     """
     person = new_comment.person.strip()
     comment = new_comment.comment.strip()
@@ -87,6 +92,10 @@ def add_comment(movie_id: str, new_comment: NewComment):
         raise HTTPException(status_code=400, detail="Escribe tu nombre.")
     if not comment:
         raise HTTPException(status_code=400, detail="Escribe un comentario.")
+    if len(person) > MAX_PERSON_LENGTH:
+        raise HTTPException(status_code=400, detail=f"El nombre no puede tener más de {MAX_PERSON_LENGTH} caracteres.")
+    if len(comment) > MAX_COMMENT_LENGTH:
+        raise HTTPException(status_code=400, detail=f"El comentario no puede tener más de {MAX_COMMENT_LENGTH} caracteres.")
     try:
         save_comment(movie_id, person, comment)
     except sqlite3.Error:

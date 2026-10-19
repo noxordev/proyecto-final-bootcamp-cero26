@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient # TestClient es una clase que permite 
 
 import connection
 import queries_omdb
+from controller import MAX_COMMENT_LENGTH, MAX_PERSON_LENGTH
 from main import app
 from queries_db import save_comment
 from test_queries_db import use_empty_database
@@ -135,6 +136,33 @@ def test_add_comment_missing_field():
     """Sin el campo comment, FastAPI responde 422 por sí solo, porque NewComment lo exige."""
     response = client.post("/api/movies/tt0133093/comments", json={"person": "Ana"})
     assert response.status_code == 422
+
+
+def test_add_comment_long_person(tmp_path, monkeypatch):
+    """Un nombre más largo que el límite responde 400 y no se guarda nada."""
+    use_empty_database(tmp_path, monkeypatch)
+    new_comment = {"person": "R" * (MAX_PERSON_LENGTH + 1), "comment": "Ricardo, este nombre no cabe"}
+    response = client.post("/api/movies/tt0133093/comments", json=new_comment)
+    assert response.status_code == 400
+    assert response.json()["detail"] == "El nombre no puede tener más de 50 caracteres."
+    assert client.get("/api/movies/tt0133093/comments").json() == []
+
+
+def test_add_comment_long_comment(tmp_path, monkeypatch):
+    """Un comentario más largo que el límite responde 400 con nuestro mensaje."""
+    use_empty_database(tmp_path, monkeypatch)
+    new_comment = {"person": "Ana", "comment": "a" * (MAX_COMMENT_LENGTH + 1)}
+    response = client.post("/api/movies/tt0133093/comments", json=new_comment)
+    assert response.status_code == 400
+    assert response.json()["detail"] == "El comentario no puede tener más de 500 caracteres."
+
+
+def test_add_comment_max_length(tmp_path, monkeypatch):
+    """Un nombre y un comentario de justo la longitud máxima sí se guardan."""
+    use_empty_database(tmp_path, monkeypatch)
+    new_comment = {"person": "R" * MAX_PERSON_LENGTH, "comment": "a" * MAX_COMMENT_LENGTH}
+    response = client.post("/api/movies/tt0133093/comments", json=new_comment)
+    assert response.status_code == 201
 
 
 def test_comments_database_error(tmp_path, monkeypatch):

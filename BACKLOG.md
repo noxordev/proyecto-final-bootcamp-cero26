@@ -85,6 +85,7 @@ Cada historia atraviesa todas las capas: modelo → controlador → vista → te
 - [x] "Too many results." → `TooManyResultsError` en el modelo → 400 con mensaje en español
 - [x] Errores de base de datos → respuesta 500 con mensaje claro
 - [x] `detail.html` abierto sin `?id=` (o vacío): muestra un mensaje y no hace peticiones
+- [x] Límite de longitud en los comentarios: nombre de 50 caracteres y comentario de 500 → 400 (y `maxlength` en el HTML)
 
 ### Entrega
 - [x] `requirements.txt` al día
@@ -120,6 +121,8 @@ Un paso está terminado cuando:
 | `create_db.sql` se sube, `movies.db` no | Lo prefiere el enunciado y los tests crean su base con la misma receta |
 | Errores: 400 datos inválidos, 404 no existe, 500 falla la base de datos, 502 falla OMDb | El frontend muestra el `detail` de cada error |
 | "Demasiados resultados" tiene su propio error (`TooManyResultsError`) y responde 400 | No es un fallo de OMDb sino del título escrito: el usuario lo puede arreglar. Los demás errores de OMDb (key inválida, límite diario) siguen como 502 con su texto original, porque los resuelve quien instala la app |
+| Límites de 50 (nombre) y 500 (comentario) caracteres, comprobados en el controlador con un 400 | Coherente con el resto de validaciones (pydantic podría hacerlo con `Field(max_length=...)`, pero respondería un 422 en inglés). El `maxlength` del HTML es solo una comodidad que copia esos números |
+| El `POST` no comprueba que la película exista en OMDb | Costaría una llamada extra por comentario, y desde la página solo se comenta una película que ya cargó bien |
 | El controlador captura `sqlite3.Error`; `queries_db.py` no captura nada | El modelo solo cierra la conexión; quien decide la respuesta HTTP es el controlador |
 | `POST` de comentarios responde 201 con un mensaje; la vista vuelve a pedir la lista | Más simple que devolver el comentario creado |
 | `movieId` se lee una sola vez, arriba de `detail.js` | Lo usan la película, sus comentarios y el formulario |
