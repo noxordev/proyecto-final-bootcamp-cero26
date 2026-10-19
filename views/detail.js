@@ -1,5 +1,5 @@
-// la película, sus comentarios y el formulario (principio DRY). Se hace en tres pasos:
-const queryString = window.location.search; // 1. La parte de la dirección que va desde el "?":
+// La película, sus comentarios y el formulario (principio DRY). Se hace en tres pasos:
+const queryString = window.location.search; // 1. Revisa la parte de la dirección que va desde el "?" para obtener el id de la película:
 const params = new URLSearchParams(queryString); // 2. Convierte ese texto en un objeto al que se le puede 
 // preguntar por cada parámetro.
 const movieId = params.get("id"); // 3. Pregunta por el parámetro "id"
