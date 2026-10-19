@@ -70,8 +70,8 @@ Cada historia atraviesa todas las capas: modelo → controlador → vista → te
 - [x] Tests de la ruta
 
 ### HU6. Calificar de 1 a 5 y ver el promedio en estrellas (opcional)
-- [ ] Base de datos: tabla `Rating` (añadirla también a `create_db.sql`)
-- [ ] Modelo: guardar una calificación y calcular el promedio
+- [x] Base de datos: tabla `Rating` en `create_db.sql`, con `CHECK` del 1 al 5 (creada en `movies.db` con DB Browser)
+- [x] Modelo: `save_rating()` y `get_rating_summary()` en `queries_db.py` (+ tests)
 - [ ] Controlador: rutas `GET` y `POST` (valida que sea un número del 1 al 5)
 - [ ] Vista: estrellas para votar y promedio en estrellas
 - [ ] Tests
@@ -123,6 +123,9 @@ Un paso está terminado cuando:
 | "Demasiados resultados" tiene su propio error (`TooManyResultsError`) y responde 400 | No es un fallo de OMDb sino del título escrito: el usuario lo puede arreglar. Los demás errores de OMDb (key inválida, límite diario) siguen como 502 con su texto original, porque los resuelve quien instala la app |
 | Límites de 50 (nombre) y 500 (comentario) caracteres, comprobados en el controlador con un 400 | Coherente con el resto de validaciones (pydantic podría hacerlo con `Field(max_length=...)`, pero respondería un 422 en inglés). El `maxlength` del HTML es solo una comodidad que copia esos números |
 | El `POST` no comprueba que la película exista en OMDb | Costaría una llamada extra por comentario, y desde la página solo se comenta una película que ya cargó bien |
+| `Rating` es una tabla aparte de `Comment`, con `CHECK` del 1 al 5 | Lo pide el enunciado; se puede votar sin comentar, y la base rechaza notas fuera de rango aunque alguien se salte la app |
+| `create_db.sql` usa `CREATE TABLE IF NOT EXISTS` | Se puede ejecutar entero sobre una base existente: crea solo las tablas que faltan |
+| `get_rating_summary` devuelve el promedio sin redondear (o `None` sin votos) | El modelo da el dato; cómo mostrarlo (redondeo, estrellas) lo decide la vista |
 | El controlador captura `sqlite3.Error`; `queries_db.py` no captura nada | El modelo solo cierra la conexión; quien decide la respuesta HTTP es el controlador |
 | `POST` de comentarios responde 201 con un mensaje; la vista vuelve a pedir la lista | Más simple que devolver el comentario creado |
 | `movieId` se lee una sola vez, arriba de `detail.js` | Lo usan la película, sus comentarios y el formulario |

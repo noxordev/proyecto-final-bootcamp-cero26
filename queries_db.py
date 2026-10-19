@@ -43,3 +43,41 @@ def get_comments(movie_id):
     for row in rows:
         comments.append(dict(row))
     return comments
+
+
+def save_rating(movie_id, person, rating):
+    """Guarda en la tabla Rating una calificación nueva de una película, con la fecha de hoy.
+
+    Recibe el imdbID de la película, el nombre de quien califica y la nota (un entero del 1 al 5).
+    No devuelve nada.
+    """
+    connection = get_connection()
+    try:
+        connection.execute(
+            "INSERT INTO Rating (movie_id, person, rating, date) VALUES (?, ?, ?, ?)",
+            [movie_id, person, rating, date.today().isoformat()],
+        )
+        connection.commit()
+    finally:
+        connection.close()
+    return None
+
+
+def get_rating_summary(movie_id):
+    """Calcula el promedio y el número de calificaciones de una película.
+
+    Recibe el imdbID de la película.
+    Devuelve un diccionario {"average": promedio, "count": número de votos}.
+    Si no tiene ninguna calificación, devuelve {"average": None, "count": 0}.
+    """
+    connection = get_connection()
+    try:
+        # AVG y COUNT resumen todas las filas en una sola, por eso basta con fetchone().
+        # Sin filas, AVG da NULL (None en Python) y COUNT da 0: el caso "sin votos" sale solo.
+        row = connection.execute(
+            "SELECT AVG(rating) AS average, COUNT(*) AS count FROM Rating WHERE movie_id = ?",
+            [movie_id],
+        ).fetchone()
+    finally:
+        connection.close()
+    return {"average": row["average"], "count": row["count"]}
