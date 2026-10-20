@@ -4,6 +4,9 @@ const params = new URLSearchParams(queryString); // 2. Convierte ese texto en un
 // preguntar por cada parámetro.
 const movieId = params.get("id"); // 3. Pregunta por el parámetro "id"
 
+// Número de estrellas: el mismo máximo que MAX_RATING en controller.py.
+const MAX_RATING = 5;
+
 // Recibe los datos de una película (tal como los da la API) y los pinta en la página.
 function showMovie(movie) {
     document.title = movie.Title;
@@ -85,6 +88,39 @@ async function loadComments() {
     }
 }
 
+// Recibe el resumen de calificaciones de la API ({average, count}) y lo pinta: tantas estrellas
+// llenas como el promedio redondeado, y debajo el promedio con un decimal y el número de votos.
+function showRating(summary) {
+    const stars = document.getElementById("rating-stars");
+    const text = document.getElementById("rating-text");
+    // average llega como null (el None de Python) cuando nadie ha votado todavía.
+    if (summary.average === null) {
+        stars.textContent = "☆".repeat(MAX_RATING);
+        text.textContent = "Todavía no hay calificaciones.";
+        return;
+    }
+    const filled = Math.round(summary.average);
+    stars.textContent = "★".repeat(filled) + "☆".repeat(MAX_RATING - filled);
+    text.textContent = `Promedio: ${summary.average.toFixed(1)} de ${MAX_RATING} · Votos: ${summary.count}`;
+}
+
+// Pide a la API el resumen de calificaciones de la película y lo muestra. Si algo falla, muestra el error.
+async function loadRating() {
+    const text = document.getElementById("rating-text");
+    try {
+        const response = await fetch(`/api/movies/${movieId}/rating`);
+        const data = await response.json();
+        if (!response.ok) {
+            text.textContent = data.detail;
+            return;
+        }
+        showRating(data);
+    } catch (error) {
+        // Solo llega aquí si el servidor no responde o responde algo que no es JSON.
+        text.textContent = "No se pudo cargar la calificación. Inténtalo de nuevo.";
+    }
+}
+
 // Se ejecuta al enviar el formulario de comentarios: manda el comentario a la API y, si se guarda,
 // vacía el formulario y vuelve a pedir la lista. Si algo falla, muestra el error bajo el formulario.
 async function sendComment(event) {
@@ -124,5 +160,6 @@ if (!movieId) {
     document.getElementById("message").textContent = "No se indicó ninguna película. Vuelve al buscador y elige una.";
 } else {
     loadMovie();
+    loadRating();
     loadComments();
 }
