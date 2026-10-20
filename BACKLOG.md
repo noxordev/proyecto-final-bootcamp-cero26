@@ -72,7 +72,7 @@ Cada historia atraviesa todas las capas: modelo → controlador → vista → te
 ### HU6. Calificar de 1 a 5 y ver el promedio en estrellas (opcional)
 - [x] Base de datos: tabla `Rating` en `create_db.sql`, con `CHECK` del 1 al 5 (creada en `movies.db` con DB Browser)
 - [x] Modelo: `save_rating()` y `get_rating_summary()` en `queries_db.py` (+ tests)
-- [ ] Controlador: rutas `GET` y `POST` (valida que sea un número del 1 al 5)
+- [x] Controlador: `GET` y `POST` en `/api/movies/{movie_id}/rating` (nota del 1 al 5 → si no, 400; si no es entero, 422; nombre con `validate_person()`)
 - [ ] Vista: estrellas para votar y promedio en estrellas
 - [ ] Tests
 
@@ -125,6 +125,7 @@ Un paso está terminado cuando:
 | El `POST` no comprueba que la película exista en OMDb | Costaría una llamada extra por comentario, y desde la página solo se comenta una película que ya cargó bien |
 | `Rating` es una tabla aparte de `Comment`, con `CHECK` del 1 al 5 | Lo pide el enunciado; se puede votar sin comentar, y la base rechaza notas fuera de rango aunque alguien se salte la app |
 | `create_db.sql` usa `CREATE TABLE IF NOT EXISTS` | Se puede ejecutar entero sobre una base existente: crea solo las tablas que faltan |
+| `validate_person()` en el controlador comprueba el nombre (vacío, longitud) | Es la misma regla para comentarios y calificaciones: vive en un solo sitio |
 | `get_rating_summary` devuelve el promedio sin redondear (o `None` sin votos) | El modelo da el dato; cómo mostrarlo (redondeo, estrellas) lo decide la vista |
 | El controlador captura `sqlite3.Error`; `queries_db.py` no captura nada | El modelo solo cierra la conexión; quien decide la respuesta HTTP es el controlador |
 | `POST` de comentarios responde 201 con un mensaje; la vista vuelve a pedir la lista | Más simple que devolver el comentario creado |

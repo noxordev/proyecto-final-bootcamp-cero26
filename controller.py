@@ -3,15 +3,19 @@ import sqlite3
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from queries_db import get_comments, save_comment
+from queries_db import get_comments, get_rating_summary, save_comment, save_rating
 from queries_omdb import OmdbError, TooManyResultsError, get_movie, search_movies
 
 # Todas las rutas de este archivo empiezan por /api, sin tener que repetirlo en cada una.
 router = APIRouter(prefix="/api")
 
-# Longitud máxima de lo que llega del formulario de comentarios. 
+# Longitud máxima de lo que llega de los formularios de comentarios y calificaciones.
 MAX_PERSON_LENGTH = 50
 MAX_COMMENT_LENGTH = 500
+
+# Notas válidas de una calificación. create_db.sql repite el mismo rango en el CHECK de la tabla Rating.
+MIN_RATING = 1
+MAX_RATING = 5
 
 
 @router.get("/search")
@@ -55,6 +59,20 @@ def movie_detail(movie_id: str):
     return movie
 
 
+def validate_person(person):
+    """Comprueba el nombre que llega de un formulario (de comentario o de calificación).
+
+    Recibe el nombre tal como llegó. Devuelve el nombre sin espacios sobrantes.
+    Responde con error 400 si está vacío o si es más largo que MAX_PERSON_LENGTH.
+    """
+    person = person.strip()
+    if not person:
+        raise HTTPException(status_code=400, detail="Escribe tu nombre.")
+    if len(person) > MAX_PERSON_LENGTH:
+        raise HTTPException(status_code=400, detail=f"El nombre no puede tener más de {MAX_PERSON_LENGTH} caracteres.")
+    return person
+
+
 class NewComment(BaseModel):
     """Datos que envía el formulario de comentarios, en JSON: {"person": "...", "comment": "..."}."""
 
@@ -86,14 +104,10 @@ def add_comment(movie_id: str, new_comment: NewComment):
     Responde con error 400 si falta el nombre o el comentario o si son demasiado largos,
     y 500 si falla la base de datos.
     """
-    person = new_comment.person.strip()
+    person = validate_person(new_comment.person)
     comment = new_comment.comment.strip()
-    if not person:
-        raise HTTPException(status_code=400, detail="Escribe tu nombre.")
     if not comment:
         raise HTTPException(status_code=400, detail="Escribe un comentario.")
-    if len(person) > MAX_PERSON_LENGTH:
-        raise HTTPException(status_code=400, detail=f"El nombre no puede tener más de {MAX_PERSON_LENGTH} caracteres.")
     if len(comment) > MAX_COMMENT_LENGTH:
         raise HTTPException(status_code=400, detail=f"El comentario no puede tener más de {MAX_COMMENT_LENGTH} caracteres.")
     try:
@@ -101,3 +115,43 @@ def add_comment(movie_id: str, new_comment: NewComment):
     except sqlite3.Error:
         raise HTTPException(status_code=500, detail="No se pudo guardar el comentario.")
     return {"message": "Comentario guardado."}
+
+
+class NewRating(BaseModel):
+    """Datos que envía el formulario de calificación, en JSON: {"person": "...", "rating": 4}."""
+
+    person: str
+    rating: int
+
+
+@router.get("/movies/{movie_id}/rating")
+def rating_summary(movie_id: str):
+    """Devuelve el promedio de calificaciones de una película: /api/movies/tt0133093/rating
+
+    Recibe el imdbID desde la dirección.
+    Devuelve {"average": promedio, "count": número de votos}; sin votos, average es null.
+    Responde con error 500 si falla la base de datos.
+    """
+    try:
+        return get_rating_summary(movie_id)
+    except sqlite3.Error:
+        raise HTTPException(status_code=500, detail="No se pudo cargar la calificación.")
+
+
+@router.post("/movies/{movie_id}/rating", status_code=201)
+def add_rating(movie_id: str, new_rating: NewRating):
+    """Guarda una calificación nueva de una película.
+
+    Recibe el imdbID desde la dirección y, en el cuerpo de la petición, el nombre y la nota.
+    Devuelve un mensaje de confirmación, con el código 201 ("creado").
+    Responde con error 400 si el nombre no es válido o la nota no está entre MIN_RATING y MAX_RATING,
+    y 500 si falla la base de datos. Si la nota no es un número entero, FastAPI responde 422.
+    """
+    person = validate_person(new_rating.person)
+    if new_rating.rating < MIN_RATING or new_rating.rating > MAX_RATING:
+        raise HTTPException(status_code=400, detail=f"La calificación tiene que ser un número del {MIN_RATING} al {MAX_RATING}.")
+    try:
+        save_rating(movie_id, person, new_rating.rating)
+    except sqlite3.Error:
+        raise HTTPException(status_code=500, detail="No se pudo guardar la calificación.")
+    return {"message": "Calificación guardada."}

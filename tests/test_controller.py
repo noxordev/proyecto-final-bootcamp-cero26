@@ -1,6 +1,6 @@
 """Tests de las rutas de controller.py. Las búsquedas válidas llaman de verdad a OMDb.
 
-Los de comentarios usan una base de datos temporal, nunca movies.db.
+Los de comentarios y calificaciones usan una base de datos temporal, nunca movies.db.
 """
 
 import os
@@ -11,7 +11,7 @@ import connection
 import queries_omdb
 from controller import MAX_COMMENT_LENGTH, MAX_PERSON_LENGTH
 from main import app
-from queries_db import save_comment
+from queries_db import save_comment, save_rating
 from test_queries_db import use_empty_database
 
 client = TestClient(app)
@@ -165,13 +165,22 @@ def test_add_comment_max_length(tmp_path, monkeypatch):
     assert response.status_code == 201
 
 
-def test_comments_database_error(tmp_path, monkeypatch):
-    """Si la base de datos falla, las dos rutas responden 500 con su mensaje."""
-    # Un archivo que existe pero no es una base de datos: sqlite3 lanza un error al usarlo.
+def use_broken_database(tmp_path, monkeypatch):
+    """Hace que connection.py use un archivo que existe pero no es una base de datos.
+
+    Recibe la carpeta temporal y el monkeypatch del test. No devuelve nada.
+    Al usar ese archivo, sqlite3 lanza un error: sirve para probar las respuestas 500.
+    """
     broken_path = os.path.join(tmp_path, "broken.db")
     with open(broken_path, "w", encoding="utf-8") as file:
         file.write("Esto no es una base de datos, Ricardo")
     monkeypatch.setattr(connection, "DB_PATH", broken_path)
+    return None
+
+
+def test_comments_database_error(tmp_path, monkeypatch):
+    """Si la base de datos falla, las dos rutas responden 500 con su mensaje."""
+    use_broken_database(tmp_path, monkeypatch)
 
     response = client.get("/api/movies/tt0133093/comments")
     assert response.status_code == 500
@@ -181,3 +190,66 @@ def test_comments_database_error(tmp_path, monkeypatch):
     response = client.post("/api/movies/tt0133093/comments", json=new_comment)
     assert response.status_code == 500
     assert response.json()["detail"] == "No se pudo guardar el comentario."
+
+
+def test_get_rating(tmp_path, monkeypatch):
+    """Con calificaciones guardadas, responde 200 con su promedio y el número de votos."""
+    use_empty_database(tmp_path, monkeypatch)
+    save_rating("tt0133093", "Ricardo", 5)
+    save_rating("tt0133093", "Ana", 4)
+    response = client.get("/api/movies/tt0133093/rating")
+    assert response.status_code == 200
+    assert response.json() == {"average": 4.5, "count": 2}
+
+
+def test_get_rating_without_ratings(tmp_path, monkeypatch):
+    """Sin calificaciones, el promedio llega como null (None en Python) y el número de votos es 0."""
+    use_empty_database(tmp_path, monkeypatch)
+    response = client.get("/api/movies/tt0133093/rating")
+    assert response.status_code == 200
+    assert response.json() == {"average": None, "count": 0}
+
+
+def test_add_rating(tmp_path, monkeypatch):
+    """Una calificación válida responde 201 y después cuenta en el promedio."""
+    use_empty_database(tmp_path, monkeypatch)
+    response = client.post("/api/movies/tt0133093/rating", json={"person": "Ricardo", "rating": 5})
+    assert response.status_code == 201
+    assert client.get("/api/movies/tt0133093/rating").json() == {"average": 5.0, "count": 1}
+
+
+def test_add_rating_out_of_range(tmp_path, monkeypatch):
+    """Un 0 o un 6 responden 400 con nuestro mensaje y no se guarda nada."""
+    use_empty_database(tmp_path, monkeypatch)
+    for rating in [0, 6]:
+        response = client.post("/api/movies/tt0133093/rating", json={"person": "Ana", "rating": rating})
+        assert response.status_code == 400
+        assert response.json()["detail"] == "La calificación tiene que ser un número del 1 al 5."
+    assert client.get("/api/movies/tt0133093/rating").json() == {"average": None, "count": 0}
+
+
+def test_add_rating_not_a_number():
+    """Una nota que no es un número entero la rechaza FastAPI con 422, porque NewRating pide un int."""
+    response = client.post("/api/movies/tt0133093/rating", json={"person": "Ana", "rating": "cinco"})
+    assert response.status_code == 422
+
+
+def test_add_rating_blank_person(tmp_path, monkeypatch):
+    """Una calificación con el nombre hecho solo de espacios responde 400, igual que un comentario."""
+    use_empty_database(tmp_path, monkeypatch)
+    response = client.post("/api/movies/tt0133093/rating", json={"person": "   ", "rating": 4})
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Escribe tu nombre."
+
+
+def test_rating_database_error(tmp_path, monkeypatch):
+    """Si la base de datos falla, las dos rutas de calificación responden 500 con su mensaje."""
+    use_broken_database(tmp_path, monkeypatch)
+
+    response = client.get("/api/movies/tt0133093/rating")
+    assert response.status_code == 500
+    assert response.json()["detail"] == "No se pudo cargar la calificación."
+
+    response = client.post("/api/movies/tt0133093/rating", json={"person": "Ana", "rating": 4})
+    assert response.status_code == 500
+    assert response.json()["detail"] == "No se pudo guardar la calificación."
