@@ -121,6 +121,38 @@ async function loadRating() {
     }
 }
 
+// Se ejecuta al enviar el formulario de calificación: manda la nota a la API y, si se guarda,
+// vacía el formulario y vuelve a pedir el promedio. Si algo falla, muestra el error bajo el formulario.
+async function sendRating(event) {
+    // Sin esto, el navegador recargaría la página al enviar el formulario.
+    event.preventDefault();
+    const formError = document.getElementById("rating-error");
+    formError.textContent = "";
+
+    const newRating = {
+        person: document.getElementById("rating-person").value,
+        // El valor de un <select> siempre es texto ("4"); se convierte en número porque la API espera un entero.
+        rating: Number(document.getElementById("rating-value").value),
+    };
+    try {
+        const response = await fetch(`/api/movies/${movieId}/rating`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(newRating),
+        });
+        const data = await response.json();
+        if (!response.ok) {
+            formError.textContent = data.detail;
+            return;
+        }
+        document.getElementById("rating-form").reset();
+        loadRating();
+    } catch (error) {
+        // Solo llega aquí si el servidor no responde o responde algo que no es JSON.
+        formError.textContent = "No se pudo enviar la calificación. Inténtalo de nuevo.";
+    }
+}
+
 // Se ejecuta al enviar el formulario de comentarios: manda el comentario a la API y, si se guarda,
 // vacía el formulario y vuelve a pedir la lista. Si algo falla, muestra el error bajo el formulario.
 async function sendComment(event) {
@@ -152,6 +184,7 @@ async function sendComment(event) {
     }
 }
 
+document.getElementById("rating-form").addEventListener("submit", sendRating);
 document.getElementById("comment-form").addEventListener("submit", sendComment);
 
 // Sin ?id= (o con ?id= vacío) no hay película que pedir: se avisa y no se hace ninguna petición.

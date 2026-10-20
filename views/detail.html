@@ -30,6 +30,29 @@
                 <h2 class="h4">Calificación</h2>
                 <p id="rating-stars" class="fs-3 text-warning mb-0"></p>
                 <p id="rating-text" class="text-secondary"></p>
+
+                <!-- detail.js lee estos campos por su id al enviar el formulario.
+                     maxlength es el mismo límite que MAX_PERSON_LENGTH, como en el formulario de comentarios.
+                     Las opciones van del 1 al 5, como MIN_RATING y MAX_RATING de controller.py. -->
+                <form id="rating-form" class="row g-2 mb-2">
+                    <div class="col-md-5">
+                        <input id="rating-person" class="form-control" placeholder="Tu nombre" maxlength="50" required>
+                    </div>
+                    <div class="col-md-4">
+                        <select id="rating-value" class="form-select" required>
+                            <option value="" disabled selected>Elige tu nota</option>
+                            <option value="5">★★★★★ (5)</option>
+                            <option value="4">★★★★☆ (4)</option>
+                            <option value="3">★★★☆☆ (3)</option>
+                            <option value="2">★★☆☆☆ (2)</option>
+                            <option value="1">★☆☆☆☆ (1)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-primary w-100">Calificar</button>
+                    </div>
+                </form>
+                <p id="rating-error" class="text-danger"></p>
             </section>
 
             <!-- Dentro de #movie para que, si la película no existe, tampoco se vean sus comentarios. -->

@@ -2,13 +2,14 @@
 
 Proyecto final del bootcamp *Aprender a programar desde cero XXVI* (KeepCoding).
 
-Aplicación web para buscar películas con la API de [OMDb](https://www.omdbapi.com/), ver su detalle y dejar comentarios, que se guardan en una base de datos SQLite.
+Aplicación web para buscar películas con la API de [OMDb](https://www.omdbapi.com/), ver su detalle, dejar comentarios y calificarlas de 1 a 5 estrellas. Comentarios y calificaciones se guardan en una base de datos SQLite.
 
 ## Funcionalidades
 
 - Buscar películas por título, o por título y año.
 - Ver el detalle de una película: póster, sinopsis, director, reparto, género y duración.
 - Escribir comentarios en el detalle de cada película y ver todos los que tiene, del más reciente al más antiguo. Cada comentario guarda la fecha del día en que se escribió.
+- Calificar cada película de 1 a 5 (parte opcional del enunciado) y ver el promedio de todas sus calificaciones en estrellas, con el número exacto y la cantidad de votos.
 - Control de errores: datos del formulario no válidos, película inexistente, OMDb sin respuesta y fallos de la base de datos. Todos se muestran en la página con un mensaje en español.
 
 ## Tecnologías
@@ -105,10 +106,10 @@ Los tests de OMDb hacen peticiones reales, así que necesitan internet y la API 
 | Arranque | `main.py` | Crea la app de FastAPI, le añade las rutas y sirve la carpeta `views/` |
 | Controlador | `controller.py` | Rutas `/api/...`: valida lo que llega y traduce los errores a respuestas HTTP |
 | Modelo | `queries_omdb.py` | Consultas a la API de OMDb |
-| Modelo | `queries_db.py` | Consultas SQL de los comentarios |
+| Modelo | `queries_db.py` | Consultas SQL de los comentarios y las calificaciones |
 | Modelo | `connection.py` | Conexión con `movies.db` |
-| Vista | `views/` | `index.html` + `search.js` (buscador) y `detail.html` + `detail.js` (detalle y comentarios) |
-| Base de datos | `create_db.sql` | Crea la tabla `Comment` |
+| Vista | `views/` | `index.html` + `search.js` (buscador) y `detail.html` + `detail.js` (detalle, calificación y comentarios) |
+| Base de datos | `create_db.sql` | Crea las tablas `Comment` y `Rating` (se puede volver a ejecutar: solo crea las que falten) |
 | Tests | `tests/` | Un archivo de tests por cada archivo de Python, y `test_omdb_api.py`, que documenta cómo responde OMDb |
 
 ### Rutas de la API
@@ -119,6 +120,8 @@ Los tests de OMDb hacen peticiones reales, así que necesitan internet y la API 
 | GET | `/api/movies/{movie_id}` | Detalle de una película por su imdbID |
 | GET | `/api/movies/{movie_id}/comments` | Comentarios de una película |
 | POST | `/api/movies/{movie_id}/comments` | Guarda un comentario: `{"person": "...", "comment": "..."}` |
+| GET | `/api/movies/{movie_id}/rating` | Promedio y número de calificaciones: `{"average": 4.5, "count": 2}` (`average` es `null` sin votos) |
+| POST | `/api/movies/{movie_id}/rating` | Guarda una calificación: `{"person": "...", "rating": 4}` |
 
 ## Proceso de desarrollo
 
@@ -128,4 +131,5 @@ En [`BACKLOG.md`](BACKLOG.md) están la arquitectura con el recorrido de una pet
 
 - **Búsqueda solo por año:** OMDb no la permite, porque siempre exige un título (lo comprueba el test `test_search_by_year_alone`). Por eso el año es un filtro opcional de la búsqueda por título.
 - **`movie_id` es texto, no un entero:** guarda el imdbID que da OMDb (por ejemplo `tt0133093`), que es lo que relaciona los comentarios con cada película.
-- **Nombres en inglés:** la tabla es `Comment (id, movie_id, person, comment, date)`, con el visto bueno del profesor.
+- **Nombres en inglés:** las tablas son `Comment (id, movie_id, person, comment, date)` y `Rating (id, movie_id, person, rating, date)`, con el visto bueno del profesor.
+- **Las estrellas del promedio son enteras** (el promedio se redondea), y debajo se muestra el número exacto con un decimal.
